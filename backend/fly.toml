@@ -1,0 +1,21 @@
+# fly.toml app configuration file generated for expense-tracker-123213 on 2023-07-21T17:17:57-04:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = "expense-tracker-123213"
+primary_region = "ams"
+
+[env]
+  PORT = "8080" # add this
+
+[experimental]
+  auto_rollback = true
+
+[[services]]
+  http_checks = []
+  internal_port = 8080 
+  processes = ["app"]
+
+[http_service]
+  internal_port = 8080

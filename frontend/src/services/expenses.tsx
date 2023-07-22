@@ -2,7 +2,7 @@ import axios from "axios";
 
 import { NewExpense } from "../../types";
 
-const BASE_URL = "http://localhost:3001/expenses";
+const BASE_URL = "/api/expenses";
 
 const getAll = () => {
   return axios.get(BASE_URL);

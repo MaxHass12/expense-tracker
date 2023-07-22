@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES6",
-    "outDir": "./build/",
+    "outDir": "./build_backend/",
     "module": "commonjs",
     "strict": true,
     "noUnusedLocals": true,
