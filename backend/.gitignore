@@ -1,12 +1,20 @@
-# prod
-build
-build_backend
+# dependencies
+/node_modules
+package-lock.json
+
+# testing
+
+# production
+/build
+/build_backend
 
 # dev
-node_modules
+db.json
+
+# deployment
 Dockerfile
 fly.toml
+.dockerignore
 
-# misc
+#misc
 NOTES.md
-package-lock.json
