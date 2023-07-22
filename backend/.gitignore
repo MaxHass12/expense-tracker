@@ -9,7 +9,8 @@ package-lock.json
 /build_backend
 
 # dev
-db.json
+.env
+src/mongo.ts
 
 # deployment
 Dockerfile
