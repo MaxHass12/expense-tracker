@@ -1,0 +1,12 @@
+# prod
+build
+build_backend
+
+# dev
+node_modules
+Dockerfile
+fly.toml
+
+# misc
+NOTES.md
+package-lock.json
