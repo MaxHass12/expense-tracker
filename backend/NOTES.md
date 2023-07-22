@@ -1,9 +1,0 @@
-- `/api/expenses/:year-month` - will contain all expenses for a given year-month
-- `/api/categories` - user should be able to create, edit categories
-- will contain an array of expenses where
-  - Every single created expense will have:
-    - id
-    - date added
-    - category
-    - amount
-    - description
