@@ -1,18 +1,5 @@
 import mongoose from "mongoose";
 
-mongoose.set("strictQuery", false);
-
-const url = process.env.MONGODB_URI as string;
-
-mongoose
-  .connect(url)
-  .then(() => {
-    console.log("connected to MongoDB");
-  })
-  .catch((error) => {
-    console.log("error connecting to MongoDB:", error.message);
-  });
-
 interface IExpense {
   date: string;
   category: string;

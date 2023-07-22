@@ -1,2 +1,0 @@
-# This should not work in the final version of the app
-GET http://localhost:3001/
