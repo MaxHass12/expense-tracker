@@ -3,6 +3,8 @@
 package-lock.json
 
 # testing
+/tests
+/requests
 
 # production
 /build
@@ -19,3 +21,4 @@ fly.toml
 
 #misc
 NOTES.md
+TODO.md

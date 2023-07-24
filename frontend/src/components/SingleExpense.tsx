@@ -2,7 +2,7 @@ import { Expense } from "../../types";
 
 const SingleExpense = (props: { expense: Expense }) => {
   const { expense } = props;
-  const expenseDate = new Date(expense.dateAdded);
+  const expenseDate = new Date(expense.createdAt);
 
   return (
     <p>

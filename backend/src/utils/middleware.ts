@@ -38,15 +38,15 @@ const unknownEndpoint = (_request: Request, response: Response) => {
 const errorHandler = (
   error: Error,
   _request: Request,
-  response: Response,
+  res: Response,
   next: NextFunction
 ) => {
-  logger.error(error.message);
+  logger.error(error);
 
-  if (error.name === "CastError") {
-    return response.status(400).send({ error: "malformatted id" });
+  if (error.name === "InvalidExpenseInputError") {
+    return res.status(400).send({ error: error.message });
   } else if (error.name === "ValidationError") {
-    return response.status(400).json({ error: error.message });
+    return res.status(400).json({ error: error.message });
   }
 
   return next(error);

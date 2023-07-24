@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 
-import { Expense, NewExpense } from "../types";
+import { Expense, CreateNewExpenseData, ExpenseCategories } from "../types";
 import SingleExpense from "./components/SingleExpense";
 import expenseService from "./services/expenses";
 import Notification from "./components/Notification";
@@ -31,12 +30,8 @@ const App = () => {
   const addEventHandler = (event: React.SyntheticEvent) => {
     event.preventDefault();
 
-    const currentDate = new Date(Date.now());
-
-    const newExpense: NewExpense = {
-      id: Math.random(),
-      dateAdded: currentDate.toLocaleString(),
-      category: category,
+    const newExpense: CreateNewExpenseData = {
+      category: category as ExpenseCategories,
       description: "",
       amount: +amount,
     };
@@ -61,20 +56,21 @@ const App = () => {
     setMonthYear(e.target.value);
   };
 
-  // monthYear is a string in format YYYY-MM
-  // -1 because Months in JS Date starts from 0
-  const filterByYear = Number(monthYear.split("-")[0]);
-  const filterByMonth = Number(monthYear.split("-")[1]) - 1;
+  // // monthYear is a string in format YYYY-MM
+  // // -1 because Months in JS Date starts from 0
+  // const filterByYear = Number(monthYear.split("-")[0]);
+  // const filterByMonth = Number(monthYear.split("-")[1]) - 1;
 
-  const expensesToShow = expenses.filter((expense) => {
-    const expenseDate = new Date(expense.dateAdded);
+  // const expensesToShow = expenses.filter((expense) => {
+  //   const expenseDate = new Date(expense.createdAt);
 
-    const expenseYear = expenseDate.getFullYear();
-    const expenseMonth = expenseDate.getMonth();
+  //   const expenseYear = expenseDate.getFullYear();
+  //   const expenseMonth = expenseDate.getMonth();
 
-    return expenseYear === filterByYear && expenseMonth === filterByMonth;
-  });
+  //   return expenseYear === filterByYear && expenseMonth === filterByMonth;
+  // });
 
+  const expensesToShow = expenses;
   return (
     <>
       <h1>Expenses</h1>

@@ -1,15 +1,26 @@
 export interface Expense {
   id: number;
-  dateAdded: string;
+  createdAt: string;
   category: string;
   description: string;
   amount: number;
 }
 
-export interface NewExpense {
-  id: number;
-  dateAdded: string;
-  category: string;
+export type CreateNewExpenseData = {
+  category: ExpenseCategories;
   description: string;
   amount: number;
+};
+
+export enum ExpenseCategories {
+  Car = "Car",
+  Gas = "Gas",
+  EatingOut = "EatingOut",
+  Entertainment = "Entertainment",
+  Groceries = "Groceries",
+  Insurance = "Insurance",
+  Medical = "Medical",
+  Miscellaneous = "Miscellaneous",
+  Rent = "Rent",
+  Travel = "Travel",
 }

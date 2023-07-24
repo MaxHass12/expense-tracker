@@ -1,6 +1,6 @@
 import axios from "axios";
 
-import { NewExpense } from "../../types";
+import { CreateNewExpenseData } from "../../types";
 
 const BASE_URL = "/api/expenses";
 
@@ -8,7 +8,7 @@ const getAll = () => {
   return axios.get(BASE_URL);
 };
 
-const create = (newExpense: NewExpense) => {
+const create = (newExpense: CreateNewExpenseData) => {
   return axios.post(BASE_URL, newExpense);
 };
 

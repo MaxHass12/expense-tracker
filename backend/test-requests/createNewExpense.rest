@@ -1,8 +1,0 @@
-POST http://localhost:3001/api/expenses
-Content-Type: application/json
-
-{
-  # "category": "grocery",
-  # "description": "",
-  # "amount": 40
-}
