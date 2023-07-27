@@ -2,10 +2,6 @@
 /node_modules
 package-lock.json
 
-# testing
-/tests
-/requests
-
 # production
 /build
 /build_backend

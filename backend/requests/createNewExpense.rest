@@ -1,0 +1,8 @@
+POST http://localhost:3001/api/expenses
+Content-Type: application/json
+
+{
+  "category": "Gas",
+  "description": "",
+  "amount": 50
+}

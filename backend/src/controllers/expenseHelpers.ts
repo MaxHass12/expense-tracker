@@ -1,5 +1,14 @@
-import { CreateNewExpenseData, ExpenseCategories } from "../types";
+import {
+  CreateNewExpenseData,
+  ExpenseCategories,
+  DateYMString,
+} from "../types";
 import { ExpenseModel } from "../models/expense";
+
+const MIN_YEAR_POSSIBLE = 1900;
+const MAX_YEAR_POSSIBLE = 2099;
+const JANUARY = 1;
+const DECEMBER = 12;
 
 /**
  * - Checks if req.body has valid newExpenseData
@@ -59,7 +68,47 @@ const createNewExpense = async (newExpenseData: CreateNewExpenseData) => {
   return result;
 };
 
+/**
+ * - checks if param from the URL is in the correct string format `YYYY-MM`
+ * - If yes, converts type from `unknown` to `DateYMString` and returns the string
+ * - Else, throws an error
+ * @param param from the URL
+ * @returns value in correct format
+ */
+const parseYearMonth = (param: unknown): DateYMString => {
+  if (!param || typeof param !== "string") {
+    const error = new Error("Unable to parse date input.");
+    error.name = "InvalidDateInputError";
+    throw error;
+  }
+
+  const dateStringArray: Array<string> = param.split("-");
+  const year = Number(dateStringArray[0]);
+  const month = Number(dateStringArray[1]);
+
+  if (
+    // dateStringArray is expected to be in format ['YYYY', 'MM']
+    dateStringArray.length !== 2 ||
+    // check validity of year
+    Number.isNaN(year) ||
+    year < MIN_YEAR_POSSIBLE ||
+    year > MAX_YEAR_POSSIBLE ||
+    // check validity of month
+    Number.isNaN(month) ||
+    month < JANUARY ||
+    month > DECEMBER
+  ) {
+    const error = new Error("Expecting a valid date in form YYYY-MM");
+    error.name = "InvalidDateInputError";
+    throw error;
+  }
+
+  // param should be in the given format at this point
+  return param as DateYMString;
+};
+
 export default {
   parseNewExpenseData,
   createNewExpense,
+  parseYearMonth,
 };

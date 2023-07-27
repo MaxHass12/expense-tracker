@@ -8,9 +8,10 @@
     "tsc": "tsc",
     "dev": "NODE_ENV=development ts-node-dev src/index.ts",
     "lint": "eslint --ext .ts .",
-    "start": "NODE_ENV=production node build_backend/index.js",
+    "start": "NODE_ENV=production node build_backend/src/index.js",
     "build:ui": "rm -rf build && cd ../frontend/ && npm run build && cp -r build ../backend",
-    "deploy": "npm run tsc && fly deploy",
+    "build:backend": "rm -rf build_backend && npm run tsc",
+    "deploy": "npm run build:backend && fly deploy",
     "deploy:full": "npm run build:ui && npm run deploy",
     "logs:prod": "fly logs"
   },
