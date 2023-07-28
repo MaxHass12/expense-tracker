@@ -12,6 +12,7 @@ const App = () => {
   const [monthYear, setMonthYear] = useState(() => {
     const currentDate = new Date();
 
+    // +1 to make January 1st month instead of 0th month
     const currentMonth = currentDate.getMonth() + 1;
     const formattedCurrentMonth = // Prepend 0 is Month is less than 10 to make it 2 digits
       currentMonth < 10 ? "0" + String(currentMonth) : String(currentMonth);

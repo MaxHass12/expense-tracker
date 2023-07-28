@@ -1,1 +1,1 @@
-GET http://localhost:3001/api/expenses/foo
+GET http://localhost:3001/api/expenses/2023-07

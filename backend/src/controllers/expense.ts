@@ -1,6 +1,10 @@
 import express, { Request, Response } from "express";
 import { ExpenseModel } from "../models/expense";
-import { CreateNewExpenseData, DateYMString } from "../types";
+import {
+  CreateNewExpenseData,
+  DateYMString,
+  CategorizedExpensesForMonth,
+} from "../types";
 import expenseHelpers from "./expenseHelpers";
 import catchError from "../utils/catchError";
 
@@ -21,8 +25,16 @@ expenseRouter.get(
     const yearMonth: DateYMString = expenseHelpers.parseYearMonth(
       req.params.yearMonth
     );
-    // const expenseData = expenseHelpers.getExpensesByCategories(req.params.yearMonth);
-    return res.status(200).send(yearMonth);
+
+    const expenseData: CategorizedExpensesForMonth =
+      await expenseHelpers.getMonthsExpenses(yearMonth);
+
+    const totalAmount: number =
+      expenseHelpers.getMonthsTotalAmount(expenseData);
+
+    return res
+      .status(200)
+      .json({ data: expenseData, totalAmount: totalAmount });
   })
 );
 

@@ -1,8 +1,9 @@
 import mongoose from "mongoose";
-import { ExpenseCategories } from "../types";
+import { ExpenseCategories, DateYMString } from "../types";
 
 interface IExpense {
   createdAt: Date;
+  _yearMonth: DateYMString;
   category: string;
   description: string;
   amount: number;
@@ -10,7 +11,12 @@ interface IExpense {
 
 const expenseSchema = new mongoose.Schema<IExpense>({
   createdAt: { type: Date, required: true },
-  category: { type: String, enum: Object.values(ExpenseCategories) },
+  _yearMonth: { type: String, required: true },
+  category: {
+    type: String,
+    enum: Object.values(ExpenseCategories),
+    required: true,
+  },
   description: { type: String },
   amount: { type: Number, required: true, min: 0 },
 });
@@ -23,6 +29,7 @@ expenseSchema.set("toJSON", {
     returnedObject.createdAt = returnedObject.createdAt.toString();
     delete returnedObject._id;
     delete returnedObject.__v;
+    delete returnedObject._yearMonth;
   },
 });
 

@@ -2,7 +2,7 @@ POST http://localhost:3001/api/expenses
 Content-Type: application/json
 
 {
-  "category": "Gas",
+  "category": "Baby",
   "description": "",
-  "amount": 50
+  "amount": 10000
 }
