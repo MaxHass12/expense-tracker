@@ -3,32 +3,67 @@ import {
   ExpenseCategories,
   DateYMString,
   CategorizedExpensesForMonth,
+  IExpense,
+  IUser,
+  MonthlyExpenses,
   Expense,
-} from "../types";
-import { ExpenseModel } from "../models/expense";
+} from "../../types";
+import usersHelpers from "./usersHelpers";
+import ExpenseModel from "../../models/expense";
+import helpers from "./helpers";
+import { HydratedDocument } from "mongoose";
 
 const MIN_YEAR_POSSIBLE = 1900;
 const MAX_YEAR_POSSIBLE = 2099;
 const JANUARY = 1;
 const DECEMBER = 12;
 
+// June dates are used for creating dummy data for June Month
+// const JUNE_DATE = new Date("2023-06-10"); // for creating Dates in previous months
+// const JUNE_YEAR_MONTH = "2023-06";
+
 /**
- * private method for returning current year-month in YYYY-MM format
+ * - Attaches expense document to array corresponding to current YearMonth in user.monthlyExpenses
+ * - Does not perform any input validation
+ */
+const _attachExpenseToUser = async (
+  expense: HydratedDocument<IExpense>,
+  user: HydratedDocument<IUser>
+): Promise<void> => {
+  let currentYearMonth: DateYMString = helpers.getCurrentMonthYear();
+  // currentYearMonth = JUNE_YEAR_MONTH;
+  // MongoDB does not recognize mutated elements as new elements
+  // Thus, MongoDb does not save mutated elements.
+  // Hence we are creating copy of both the object and the array, instead of mutating them
+  const monthlyExpenseCopy: MonthlyExpenses = { ...user.monthlyExpenses };
+  monthlyExpenseCopy[currentYearMonth] ||= [];
+  monthlyExpenseCopy[currentYearMonth] = monthlyExpenseCopy[
+    currentYearMonth
+  ].concat(expense._id);
+  user.monthlyExpenses = monthlyExpenseCopy;
+
+  await user.save();
+};
+
+/**
+ * - fetches expense from MongoDB
+ * - throws error if expense not found
+ * @param id
  * @returns
  */
-const _getCurrentMonthYear = (): string => {
-  // // for creating Dates in previous months
-  // const juneDate = new Date("2023-06-10");
-  // const currentDate = juneDate;
-  // --
-  const currentDate: Date = new Date();
-  const currentMonth = currentDate.getMonth() + 1; // To maake JAN 1 instead of 0
-  const currentYear = currentDate.getFullYear();
+const _findExpenseById = async (
+  id: string
+): Promise<HydratedDocument<IExpense>> => {
+  const expense = await ExpenseModel.findById(id);
 
-  const currentMonthString =
-    currentMonth < 10 ? `0${currentMonth}` : `${currentMonth}`;
+  if (!expense) {
+    const error = new Error("expenseId Invalid.");
+    error.name = "InvalidExpenseIDInternalError";
+    throw error;
+  }
 
-  return `${currentYear}-${currentMonthString}`;
+  // We have already checked for non null expense
+  return expense as unknown as HydratedDocument<IExpense>;
 };
 
 /**
@@ -36,6 +71,7 @@ const _getCurrentMonthYear = (): string => {
  * - category should be of string and part of enum Categories value
  * - description should be a string
  * - amount should be a >= 0 number
+ * - userId should be present and of string type
  * - return the data if valid,
  * - throws `InvalidNewExpenseInputError` error otherwise
  * @param body
@@ -48,21 +84,26 @@ const parseNewExpenseData = (body: unknown): CreateNewExpenseData => {
     throw error;
   }
 
+  const EXPENSE_CATEGORIES = Object.values(ExpenseCategories) as string[];
+
   if (
     "category" in body &&
     typeof body.category === "string" &&
-    (Object.values(ExpenseCategories) as string[]).includes(body.category) &&
+    EXPENSE_CATEGORIES.includes(body.category) &&
     "description" in body &&
     typeof body.description === "string" &&
     "amount" in body &&
     typeof body.amount === "number" &&
-    body.amount >= 0
+    body.amount >= 0 &&
+    "userId" in body &&
+    typeof body.userId === "string"
   ) {
     const category = body.category as ExpenseCategories;
     const newExpenseData: CreateNewExpenseData = {
       category: category,
       description: body.description,
       amount: body.amount,
+      userId: body.userId,
     };
 
     return newExpenseData;
@@ -75,20 +116,34 @@ const parseNewExpenseData = (body: unknown): CreateNewExpenseData => {
 
 /**
  * - creates new Expense data in MongoDB
- * - assumes input is valid, performs no input validation
+ * - except for userId assumes input is valid, performs no input validation
+ * - If userId invalid throws an error
+ * - Attaches the id of new expense to current month in user.monthlyExpenses
  * @param newExpenseData
- * @returns the returned value from `save()` from Mongo Model
+ * @returns the saved new Expense
  */
 const createNewExpense = async (newExpenseData: CreateNewExpenseData) => {
-  // const juneDate = new Date("2023-06-10"); // for creating Dates in previous months
-  const newExpense = new ExpenseModel({
-    ...newExpenseData,
+  // Find User
+  const userId = newExpenseData.userId;
+  const user: HydratedDocument<IUser> = await usersHelpers.findUserById(userId);
+
+  // Create New Expense
+  const newExpense: HydratedDocument<IExpense> = new ExpenseModel({
+    category: newExpenseData.category,
+    // createdAt: JUNE_DATE,
     createdAt: new Date(),
-    _yearMonth: _getCurrentMonthYear(),
+    description: newExpenseData.description,
+    amount: newExpenseData.amount,
+    _userId: user.id,
   });
 
-  const result = await newExpense.save();
-  return result;
+  const savedExpense: HydratedDocument<IExpense> = await newExpense.save();
+
+  // Attach Expense to User
+  _attachExpenseToUser(savedExpense, user);
+
+  // return the saved response
+  return savedExpense;
 };
 
 /**
@@ -137,16 +192,29 @@ const parseYearMonth = (param: unknown): DateYMString => {
 /**
  * - fetches all the expenses in the DB as per the yearMonth provided
  * - group-by the expenses data on category field
+ * @param userId
  * @param yearMonth
  * @returns grouped expenses by categories, sorted by total amount (highest first), removes category with no expense
  */
 const getMonthsExpenses = async (
+  userId: string,
   yearMonth: DateYMString
 ): Promise<CategorizedExpensesForMonth> => {
-  // fetch expensed from DB
-  const expensesByYearMonth: Array<Expense> = await ExpenseModel.find({
-    _yearMonth: yearMonth,
+  // There is probably a better way to do it.
+  // But due to my limited knowledge of MongoDB I am doing it this way
+
+  // fetch user from DB
+  const user: HydratedDocument<IUser> = await usersHelpers.findUserById(userId);
+
+  // fetch Expenses from user
+  const expensesIds = user.monthlyExpenses[yearMonth] || [];
+
+  const expensePromises = expensesIds.map(async (id) => {
+    const expense = await _findExpenseById(String(id));
+    return expense.toJSON() as Expense; // True by definition
   });
+
+  const userExpenses: Array<Expense> = await Promise.all(expensePromises);
 
   // Initializing an empty result object, will be populated later
   const expenseCategories = Object.values(ExpenseCategories);
@@ -163,7 +231,7 @@ const getMonthsExpenses = async (
 
   // Looping through expenses fetched from DB
   //  - Will update each category in `results` based on single expense
-  expensesByYearMonth.forEach((expense) => {
+  userExpenses.forEach((expense) => {
     const expenseCategory: ExpenseCategories = expense.category;
 
     const categoryIndexInResult: number = result.findIndex(

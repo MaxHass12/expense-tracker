@@ -30,9 +30,11 @@ export type CreateNewExpenseData = {
   category: ExpenseCategories;
   description: string;
   amount: number;
+  userId: string;
 };
 
 // Format of the public interface of single expense data (not how it is stored in MongoDB)
+// Type of JSON representation of an Expense document
 export type Expense = {
   id: string;
   createdAt: string;
@@ -51,3 +53,26 @@ type CategoryExpenseDetail = {
 // Format of a category-wise data for single month
 // Public interface of data send from backend to frontend
 export type CategorizedExpensesForMonth = Array<CategoryExpenseDetail>;
+
+// Format of Expense Document for Mongoose
+import { Schema, Document } from "mongoose";
+
+export interface IExpense extends Document {
+  createdAt: Date;
+  category: string;
+  description: string;
+  amount: number;
+  _userId: Schema.Types.ObjectId;
+}
+
+// type of MonthlyExpense object stored under each user
+export type MonthlyExpenses = {
+  -readonly [key in DateYMString]-?: Array<Schema.Types.ObjectId>;
+};
+
+export interface IUser extends Document {
+  username: string;
+  passwordHash: string;
+  isAdmin: Boolean;
+  monthlyExpenses: MonthlyExpenses;
+}

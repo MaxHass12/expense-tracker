@@ -1,5 +1,6 @@
 import express from "express";
 import expenseRouter from "./controllers/expense";
+import usersRouter from "./controllers/users";
 import middleware from "./utils/middleware";
 import config from "./utils/config";
 import logger from "./utils/logger";
@@ -30,6 +31,7 @@ app.use(middleware.requestLogger);
 
 // routes
 app.use("/api/expenses", expenseRouter);
+app.use("/api/users", usersRouter);
 
 // error handler and unknown endpoint
 app.use(middleware.unknownEndpoint);

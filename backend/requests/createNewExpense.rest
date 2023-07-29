@@ -2,7 +2,8 @@ POST http://localhost:3001/api/expenses
 Content-Type: application/json
 
 {
-  "category": "Baby",
+  "category": "Gas",
   "description": "",
-  "amount": 10000
+  "amount": 100,
+  "userId": "64c4869a89166f9f9958453b"
 }

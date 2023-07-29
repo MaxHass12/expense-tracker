@@ -9,6 +9,7 @@ package-lock.json
 # dev
 .env
 src/mongo.ts
+requests/loginUser.rest
 
 # deployment
 Dockerfile

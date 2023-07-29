@@ -1,17 +1,8 @@
 import mongoose from "mongoose";
-import { ExpenseCategories, DateYMString } from "../types";
-
-interface IExpense {
-  createdAt: Date;
-  _yearMonth: DateYMString;
-  category: string;
-  description: string;
-  amount: number;
-}
+import { ExpenseCategories, IExpense } from "../types";
 
 const expenseSchema = new mongoose.Schema<IExpense>({
   createdAt: { type: Date, required: true },
-  _yearMonth: { type: String, required: true },
   category: {
     type: String,
     enum: Object.values(ExpenseCategories),
@@ -19,6 +10,10 @@ const expenseSchema = new mongoose.Schema<IExpense>({
   },
   description: { type: String },
   amount: { type: Number, required: true, min: 0 },
+  _userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
 });
 
 expenseSchema.set("toJSON", {
@@ -29,8 +24,10 @@ expenseSchema.set("toJSON", {
     returnedObject.createdAt = returnedObject.createdAt.toString();
     delete returnedObject._id;
     delete returnedObject.__v;
-    delete returnedObject._yearMonth;
+    delete returnedObject._userId;
   },
 });
 
-export const ExpenseModel = mongoose.model("Expense", expenseSchema);
+const ExpenseModel = mongoose.model<IExpense>("Expense", expenseSchema);
+
+export default ExpenseModel;

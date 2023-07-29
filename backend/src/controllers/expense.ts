@@ -1,12 +1,14 @@
 import express, { Request, Response } from "express";
-import { ExpenseModel } from "../models/expense";
 import {
   CreateNewExpenseData,
   DateYMString,
   CategorizedExpensesForMonth,
+  IExpense,
 } from "../types";
-import expenseHelpers from "./expenseHelpers";
+import ExpenseModel from "../models/expense";
+import expenseHelpers from "./routesHelpers/expenseHelpers";
 import catchError from "../utils/catchError";
+import { HydratedDocument } from "mongoose";
 
 const expenseRouter = express.Router();
 
@@ -18,7 +20,8 @@ expenseRouter.get(
   })
 );
 
-// TODO - implement the helper functions, write tests for the route and implement the frontend
+const GUEST_USER_ID = "64c4869a89166f9f9958453b";
+
 expenseRouter.get(
   "/:yearMonth",
   catchError(async (req: Request, res: Response) => {
@@ -26,8 +29,10 @@ expenseRouter.get(
       req.params.yearMonth
     );
 
+    const userId = GUEST_USER_ID;
+
     const expenseData: CategorizedExpensesForMonth =
-      await expenseHelpers.getMonthsExpenses(yearMonth);
+      await expenseHelpers.getMonthsExpenses(userId, yearMonth);
 
     const totalAmount: number =
       expenseHelpers.getMonthsTotalAmount(expenseData);
@@ -41,12 +46,12 @@ expenseRouter.get(
 expenseRouter.post(
   "/",
   catchError(async (req: Request, res: Response) => {
-    await ExpenseModel.find({});
-
     const newExpenseData: CreateNewExpenseData =
       expenseHelpers.parseNewExpenseData(req.body);
 
-    const newExpense = await expenseHelpers.createNewExpense(newExpenseData);
+    const newExpense: HydratedDocument<IExpense> =
+      await expenseHelpers.createNewExpense(newExpenseData);
+
     res.status(201).json(newExpense);
   })
 );

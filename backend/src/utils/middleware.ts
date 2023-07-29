@@ -47,6 +47,12 @@ const errorHandler = (
     return res.status(400).send({ error: error.message });
   } else if (error.name === "InvalidDateInputError") {
     return res.status(400).json({ error: error.message });
+  } else if (error.name === "InvalidUserInputError") {
+    return res.status(400).json({ error: error.message });
+  } else if (error.name === "MongoServerError") {
+    return res.status(500).json({ error: error.message });
+  } else if (error.name === "InvalidExpenseIDInternalError") {
+    return res.status(500).json({ error: "Internal Server Error" });
   } else if (error.name === "ValidationError") {
     return res.status(400).json({ error: error.message });
   }
