@@ -1,1 +1,4 @@
 GET http://localhost:3001/foo
+
+###
+GET https://expense-tracker-123213.fly.dev/api/foo

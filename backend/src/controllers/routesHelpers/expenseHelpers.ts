@@ -35,8 +35,10 @@ const _attachExpenseToUser = async (
 
   // MongoDB does not recognize mutated elements as new elements
   // Thus, MongoDb does not save mutated elements.
-  // Hence we are creating copy of both the object and the array, instead of mutating them
+  // Hence we are creating new expenseMontht object and
+  // the array of expenses, instead of mutating them
 
+  // Create new expenseMonths object
   const monthlyExpenseCopy: MonthlyExpenses = { ...user.monthlyExpenses };
 
   // Initializing cuurentYearMonth array to empty, if not present
@@ -47,7 +49,7 @@ const _attachExpenseToUser = async (
     currentYearMonth
   ] as Array<Schema.Types.ObjectId>;
 
-  currentYearMonthsExpenseIds = currentYearMonthsExpenseIds.concat(expense.id);
+  currentYearMonthsExpenseIds = currentYearMonthsExpenseIds.concat(expense._id);
 
   monthlyExpenseCopy[currentYearMonth] = currentYearMonthsExpenseIds;
 
@@ -68,7 +70,9 @@ const _findExpenseById = async (
   const expense = await ExpenseModel.findById(id);
 
   if (!expense) {
-    const error = new Error("expenseId Invalid.");
+    const error = new Error(
+      "Expense ID Invalid while searching for expenses linked with user."
+    );
     error.name = "InvalidExpenseIDInternalError";
     throw error;
   }
@@ -89,7 +93,7 @@ const _findExpenseById = async (
  */
 const parseNewExpenseData = (body: unknown): CreateNewExpenseData => {
   if (!body || typeof body !== "object") {
-    const error = new Error("Unable to parse input.");
+    const error = new Error("Unable to parse input for POST /api/expenses");
     error.name = "InvalidExpenseInputError";
     throw error;
   }
@@ -97,6 +101,7 @@ const parseNewExpenseData = (body: unknown): CreateNewExpenseData => {
   const EXPENSE_CATEGORIES = Object.values(ExpenseCategories) as string[];
 
   if (
+    Object.keys(body).length === 3 &&
     "category" in body &&
     typeof body.category === "string" &&
     EXPENSE_CATEGORIES.includes(body.category) &&
@@ -116,7 +121,9 @@ const parseNewExpenseData = (body: unknown): CreateNewExpenseData => {
     return newExpenseData;
   }
 
-  const error = new Error("Input fields missing or invalid.");
+  const error = new Error(
+    "Input fields missing or extra or invalid for POST /api/expenses"
+  );
   error.name = "InvalidExpenseInputError";
   throw error;
 };
@@ -164,7 +171,7 @@ const createNewExpense = async (
  */
 const parseYearMonth = (param: unknown): DateYMString => {
   if (!param || typeof param !== "string") {
-    const error = new Error("Unable to parse date input.");
+    const error = new Error("Unable to parse YearMonth from URL.");
     error.name = "InvalidDateInputError";
     throw error;
   }
@@ -209,25 +216,28 @@ const getMonthsExpenses = async (
   userId: string,
   yearMonth: DateYMString
 ): Promise<CategorizedExpensesForMonth> => {
+  // We are getting all expenses associated with user from user.monthlyExpenses
+  // Then grouping them by categories, taking sum of each category
   // There is probably a better way to do it.
   // But due to my limited knowledge of MongoDB I am doing it this way
+
+  const expenseCategories = Object.values(ExpenseCategories);
 
   // fetch user from DB
   const user: HydratedDocument<IUser> = await usersHelpers.findUserById(userId);
 
-  // fetch Expenses from user
+  // fetch ExpensesIds from user
+  // either monthly expenses exist, or return an empty array
   const expensesIds = user.monthlyExpenses[yearMonth] || [];
 
+  // Mao expensesIds to expenses
   const expensePromises = expensesIds.map(async (id) => {
-    const expense = await _findExpenseById(String(id));
+    const expense = await _findExpenseById(id.toString());
     return expense.toJSON() as Expense; // True by definition
   });
-
   const userExpenses: Array<Expense> = await Promise.all(expensePromises);
 
   // Initializing an empty result object, will be populated later
-  const expenseCategories = Object.values(ExpenseCategories);
-
   const result: CategorizedExpensesForMonth = expenseCategories.map(
     (category) => {
       return {
@@ -238,8 +248,8 @@ const getMonthsExpenses = async (
     }
   );
 
-  // Looping through expenses fetched from DB
-  //  - Will update each category in `results` based on single expense
+  // for each expenses fetched from DB:
+  //  - add that expense to its category and change the sum of that category
   userExpenses.forEach((expense) => {
     const expenseCategory: ExpenseCategories = expense.category;
 
@@ -252,7 +262,7 @@ const getMonthsExpenses = async (
     categoryItemInResult.expenses.push(expense);
   });
 
-  // sort by amount
+  // sort the result by amount, category with highes amount first
   result.sort((expense1, expense2) => expense2.amount - expense1.amount);
 
   return result;

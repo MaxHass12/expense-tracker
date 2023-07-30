@@ -65,7 +65,7 @@ const userIdExtractor = (
   const decodedToken = jwt.verify(
     token,
     config.SECRET as string // a valid SECRET should be exported from config
-  ) as JwtPayload; // Else it throws an Error
+  ) as JwtPayload; // Else it throws an Error, hence type forcing is safe.
 
   if (!decodedToken.id) {
     const error = new Error("Token Invalid");
@@ -80,34 +80,35 @@ const userIdExtractor = (
 
 const errorHandler = (
   error: Error,
-  _request: Request,
+  _req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ) => {
   logger.error(error);
 
   if (error.name === "InvalidExpenseInputError") {
-    return res.status(400).send({ error: error.message });
+    return res.status(400).send({ error: "Received Invalid Expense Data" });
   } else if (error.name === "InvalidDateInputError") {
-    return res.status(400).json({ error: error.message });
+    return res
+      .status(400)
+      .json({ error: "Expecting a valid date in form YYYY-MM" });
   } else if (error.name === "InvalidUserInputError") {
     return res.status(400).json({ error: error.message });
   } else if (error.name === "MongoServerError") {
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: "Internal Server Error" });
   } else if (error.name === "InvalidExpenseIDInternalError") {
     return res.status(500).json({ error: "Internal Server Error" });
   } else if (
     error.name === "JsonWebTokenError" ||
-    error.name === "AuthenticationError"
+    error.name === "AuthenticationError" ||
+    error.name === "UserCreationDuringProductionError"
   ) {
     return res.status(401).json({ error: "Authentication Failed" });
   } else if (error.name === "ValidationError") {
     return res.status(400).json({ error: error.message });
+  } else {
+    return res.status(500).json({ error: "Internal server error" });
   }
-  // TODO
-  // Why are we passing error to next after an error
-  // Request should be terminated here if server throws an error
-  return next(error);
 };
 
 export default {

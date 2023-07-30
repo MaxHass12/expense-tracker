@@ -2,6 +2,7 @@ import { HydratedDocument } from "mongoose";
 import UserModel from "../../models/users";
 import ExpenseModel from "../../models/expense";
 import { IUser, MonthlyExpenses } from "../../types";
+import helpers from "./helpers";
 
 interface CreateUserData {
   username: string;
@@ -21,7 +22,7 @@ const GUEST_USERNAME = "guest";
  */
 const parseCreateUserData = (body: unknown): CreateUserData => {
   if (!body || typeof body !== "object") {
-    const error = new Error("Unable to parse user input.");
+    const error = new Error("Unable to parse Create User Data.");
     error.name = "InvalidUserInputError";
     throw error;
   }
@@ -41,7 +42,7 @@ const parseCreateUserData = (body: unknown): CreateUserData => {
     };
   }
 
-  const error = new Error("Please enter valid username and password.");
+  const error = new Error("Invalid Username or Password.");
   error.name = "InvalidUserInputError";
   throw error;
 };
@@ -56,7 +57,7 @@ const findUserById = async (id: string): Promise<HydratedDocument<IUser>> => {
   const user = UserModel.findById(id);
 
   if (!user) {
-    const error = new Error("userId Invalid.");
+    const error = new Error("Can not fetch user through ID in DB");
     error.name = "InvalidUserInputError";
     throw error;
   }
@@ -77,7 +78,7 @@ const findUserByName = async (
   const user = await UserModel.findOne({ username: name });
 
   if (!user) {
-    const error = new Error("username Invalid.");
+    const error = new Error("Unable to find user by name in DB");
     error.name = "InvalidUserInputError";
     throw error;
   }
@@ -86,17 +87,26 @@ const findUserByName = async (
   return user as unknown as HydratedDocument<IUser>;
 };
 
+/**
+ * - Clears guest user data to the initial dummy data
+ * - Gets guest username from the constant
+ */
 const clearGuestUserData = async () => {
   const guestUser: HydratedDocument<IUser> = await findUserByName(
     GUEST_USERNAME
   );
 
-  // delete expenses
+  // delete expenses associted with guestUser.id
   const guestUserId = guestUser.id;
   ExpenseModel.deleteMany({ _userId: guestUserId });
 
-  // delete reference to expense from guestUser
+  // To delete reference to expenses from guestUser.montlyExpenses,
+  // We are creating a new empty object and saving it as guestUser.monthlyExpenses
+  const currentYearMonth = helpers.getCurrentMonthYear();
+
   const emptyMonthlyExpenses: MonthlyExpenses = {};
+  emptyMonthlyExpenses[currentYearMonth] = []; // since MongoDB will not save empty montlyExpenses
+
   guestUser.monthlyExpenses = emptyMonthlyExpenses;
 
   await guestUser.save();

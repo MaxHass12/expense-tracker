@@ -1,4 +1,4 @@
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import express, { Request, Response } from "express";
 import UserModel from "../models/users";
 import // CreateNewExpenseData,
@@ -12,17 +12,16 @@ import catchError from "../utils/catchError";
 
 const usersRouter = express.Router();
 
-usersRouter.get(
-  "/",
-  catchError(async (_req, res: Response) => {
-    const users = await UserModel.find({});
-    return res.status(200).send(users);
-  })
-);
-
 usersRouter.post(
   "/",
   catchError(async (req: Request, res: Response) => {
+    if (process.env.NODE_ENV === "production") {
+      // No User creation possible in production
+      const error = new Error("Can not send POST /users in production");
+      error.name = "UserCreationDuringProductionError";
+      throw error;
+    }
+
     const { username, password } = usersHelpers.parseCreateUserData(req.body);
 
     const saltRounds = 10;
@@ -32,10 +31,11 @@ usersRouter.post(
     const user = new UserModel({
       username,
       passwordHash,
-      isAdmin: false,
       monthlyExpenses: {},
     });
 
+    // Since mongo will not save empty `montlyExpenses`, we are initializing
+    // a field within it
     user.monthlyExpenses[currentYearMonth] = [];
 
     const savedUser = await user.save();

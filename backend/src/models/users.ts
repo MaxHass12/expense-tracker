@@ -5,7 +5,6 @@ import { IUser } from "../types";
 const userSchema = new mongoose.Schema<IUser>({
   username: { type: String, required: true, unique: true },
   passwordHash: { type: String, required: true },
-  isAdmin: { type: Boolean, required: true },
   monthlyExpenses: { type: Object, required: true },
 });
 

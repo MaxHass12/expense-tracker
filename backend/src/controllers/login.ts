@@ -1,5 +1,5 @@
 import express, { Response } from "express";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import catchError from "../utils/catchError";
 import userHelpers from "./routesHelpers/usersHelpers";
@@ -38,7 +38,10 @@ loginRouter.post(
       id: user._id,
     };
 
-    const token = jwt.sign(userForToken, config.SECRET as string);
+    const TOKEN_EXPIRY_DURATION_SECONDS = 7 * 24 * 60 * 60; // 1 Week Now, Reduce Later
+    const token = jwt.sign(userForToken, config.SECRET as string, {
+      expiresIn: TOKEN_EXPIRY_DURATION_SECONDS,
+    });
 
     return res.status(200).send({ token, username: user.username });
   })
