@@ -1,3 +1,5 @@
+import { Request } from "express";
+
 // To represent Year Month in YYYY-MM format
 // Inspired from https://javascript.plainenglish.io/type-safe-date-strings-66b6dc58658a
 
@@ -30,7 +32,6 @@ export type CreateNewExpenseData = {
   category: ExpenseCategories;
   description: string;
   amount: number;
-  userId: string;
 };
 
 // Format of the public interface of single expense data (not how it is stored in MongoDB)
@@ -67,7 +68,7 @@ export interface IExpense extends Document {
 
 // type of MonthlyExpense object stored under each user
 export type MonthlyExpenses = {
-  -readonly [key in DateYMString]-?: Array<Schema.Types.ObjectId>;
+  -readonly [key in DateYMString]+?: Array<Schema.Types.ObjectId>;
 };
 
 export interface IUser extends Document {
@@ -75,4 +76,9 @@ export interface IUser extends Document {
   passwordHash: string;
   isAdmin: Boolean;
   monthlyExpenses: MonthlyExpenses;
+}
+
+// Request with authentication
+export interface RequestWithUserId extends Request {
+  userId?: string;
 }

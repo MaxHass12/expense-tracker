@@ -1,17 +1,17 @@
-import express, { Request, Response } from "express";
+import express, { Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import catchError from "../utils/catchError";
 import userHelpers from "./routesHelpers/usersHelpers";
 import { HydratedDocument } from "mongoose";
-import { IUser } from "../types";
+import { IUser, RequestWithUserId } from "../types";
 import config from "../utils/config";
 
 const loginRouter = express.Router();
 
 loginRouter.post(
   "/",
-  catchError(async (req: Request, res: Response) => {
+  catchError(async (req: RequestWithUserId, res: Response) => {
     const { username, password } = userHelpers.parseCreateUserData(req.body);
 
     const user: HydratedDocument<IUser> = await userHelpers.findUserByName(
@@ -27,7 +27,11 @@ loginRouter.post(
       });
     }
 
-    // need to delete guest's expenses if user.username === 'guest'
+    // Henceforth, username and password are valid
+
+    if (user.username === "guest") {
+      await userHelpers.clearGuestUserData();
+    }
 
     const userForToken = {
       username: user.username,

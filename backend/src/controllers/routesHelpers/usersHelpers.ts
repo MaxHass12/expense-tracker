@@ -1,6 +1,7 @@
 import { HydratedDocument } from "mongoose";
 import UserModel from "../../models/users";
-import { IUser } from "../../types";
+import ExpenseModel from "../../models/expense";
+import { IUser, MonthlyExpenses } from "../../types";
 
 interface CreateUserData {
   username: string;
@@ -8,6 +9,7 @@ interface CreateUserData {
 }
 
 const MINIMUM_LENGTH = 4;
+const GUEST_USERNAME = "guest";
 
 /**
  * - parses req.body for POST /user and POST /login
@@ -72,7 +74,7 @@ const findUserById = async (id: string): Promise<HydratedDocument<IUser>> => {
 const findUserByName = async (
   name: string
 ): Promise<HydratedDocument<IUser>> => {
-  const user = await UserModel.find({ username: name });
+  const user = await UserModel.findOne({ username: name });
 
   if (!user) {
     const error = new Error("username Invalid.");
@@ -84,8 +86,25 @@ const findUserByName = async (
   return user as unknown as HydratedDocument<IUser>;
 };
 
+const clearGuestUserData = async () => {
+  const guestUser: HydratedDocument<IUser> = await findUserByName(
+    GUEST_USERNAME
+  );
+
+  // delete expenses
+  const guestUserId = guestUser.id;
+  ExpenseModel.deleteMany({ _userId: guestUserId });
+
+  // delete reference to expense from guestUser
+  const emptyMonthlyExpenses: MonthlyExpenses = {};
+  guestUser.monthlyExpenses = emptyMonthlyExpenses;
+
+  await guestUser.save();
+};
+
 export default {
   parseCreateUserData,
   findUserById,
   findUserByName,
+  clearGuestUserData,
 };

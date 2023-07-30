@@ -1,1 +1,2 @@
-GET http://localhost:3001/api/expenses/2023-07
+GET http://localhost:3001/api/expenses/a
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Imd1ZXN0IiwiaWQiOiI2NGM0ODY5YTg5MTY2ZjlmOTk1ODQ1M2IiLCJpYXQiOjE2OTA2NzM0MTB9.ZARLNq0Ejqdah9YSPqSu1rbNPqjxT_zLN9JaoU3j3TA

@@ -11,7 +11,7 @@ import {
 import usersHelpers from "./usersHelpers";
 import ExpenseModel from "../../models/expense";
 import helpers from "./helpers";
-import { HydratedDocument } from "mongoose";
+import { HydratedDocument, Schema } from "mongoose";
 
 const MIN_YEAR_POSSIBLE = 1900;
 const MAX_YEAR_POSSIBLE = 2099;
@@ -30,16 +30,27 @@ const _attachExpenseToUser = async (
   expense: HydratedDocument<IExpense>,
   user: HydratedDocument<IUser>
 ): Promise<void> => {
-  let currentYearMonth: DateYMString = helpers.getCurrentMonthYear();
+  const currentYearMonth: DateYMString = helpers.getCurrentMonthYear();
   // currentYearMonth = JUNE_YEAR_MONTH;
+
   // MongoDB does not recognize mutated elements as new elements
   // Thus, MongoDb does not save mutated elements.
   // Hence we are creating copy of both the object and the array, instead of mutating them
+
   const monthlyExpenseCopy: MonthlyExpenses = { ...user.monthlyExpenses };
+
+  // Initializing cuurentYearMonth array to empty, if not present
   monthlyExpenseCopy[currentYearMonth] ||= [];
-  monthlyExpenseCopy[currentYearMonth] = monthlyExpenseCopy[
+
+  // Since we have initialized to be an empty array we can force the type
+  let currentYearMonthsExpenseIds = monthlyExpenseCopy[
     currentYearMonth
-  ].concat(expense._id);
+  ] as Array<Schema.Types.ObjectId>;
+
+  currentYearMonthsExpenseIds = currentYearMonthsExpenseIds.concat(expense.id);
+
+  monthlyExpenseCopy[currentYearMonth] = currentYearMonthsExpenseIds;
+
   user.monthlyExpenses = monthlyExpenseCopy;
 
   await user.save();
@@ -71,7 +82,6 @@ const _findExpenseById = async (
  * - category should be of string and part of enum Categories value
  * - description should be a string
  * - amount should be a >= 0 number
- * - userId should be present and of string type
  * - return the data if valid,
  * - throws `InvalidNewExpenseInputError` error otherwise
  * @param body
@@ -94,16 +104,13 @@ const parseNewExpenseData = (body: unknown): CreateNewExpenseData => {
     typeof body.description === "string" &&
     "amount" in body &&
     typeof body.amount === "number" &&
-    body.amount >= 0 &&
-    "userId" in body &&
-    typeof body.userId === "string"
+    body.amount >= 0
   ) {
     const category = body.category as ExpenseCategories;
     const newExpenseData: CreateNewExpenseData = {
       category: category,
       description: body.description,
       amount: body.amount,
-      userId: body.userId,
     };
 
     return newExpenseData;
@@ -122,9 +129,11 @@ const parseNewExpenseData = (body: unknown): CreateNewExpenseData => {
  * @param newExpenseData
  * @returns the saved new Expense
  */
-const createNewExpense = async (newExpenseData: CreateNewExpenseData) => {
+const createNewExpense = async (
+  newExpenseData: CreateNewExpenseData,
+  userId: string
+) => {
   // Find User
-  const userId = newExpenseData.userId;
   const user: HydratedDocument<IUser> = await usersHelpers.findUserById(userId);
 
   // Create New Expense

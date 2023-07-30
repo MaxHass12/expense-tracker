@@ -1,6 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 
 import logger from "./logger";
+import jwt, { JwtPayload } from "jsonwebtoken";
+import config from "./config";
+import { RequestWithUserId } from "../types";
 
 /**
  * - Logs request details method, URL, body
@@ -35,6 +38,46 @@ const unknownEndpoint = (_request: Request, response: Response) => {
   response.status(404).send({ error: "unknown endpoint" });
 };
 
+/**
+ * - middleware to check for authentication via authentication header
+ * - if authentication token exists and is valid:
+ * - then, attaches the decoded userId to request
+ * - else, throws an error
+ * @param req
+ * @param _res
+ * @param next
+ */
+const userIdExtractor = (
+  req: RequestWithUserId,
+  _res: Response,
+  next: NextFunction
+) => {
+  const authorization = req.get("authorization");
+
+  if (!authorization || !authorization.startsWith("Bearer ")) {
+    const error = new Error("No Authorization Header Found");
+    error.name = "AuthenticationError";
+    throw error;
+  }
+
+  const token = authorization.replace("Bearer ", "");
+
+  const decodedToken = jwt.verify(
+    token,
+    config.SECRET as string // a valid SECRET should be exported from config
+  ) as JwtPayload; // Else it throws an Error
+
+  if (!decodedToken.id) {
+    const error = new Error("Token Invalid");
+    error.name = "AuthenticationError";
+    throw error;
+  }
+
+  // If authentication successfull, attaching userId to request
+  req.userId = decodedToken.id;
+  next();
+};
+
 const errorHandler = (
   error: Error,
   _request: Request,
@@ -53,10 +96,17 @@ const errorHandler = (
     return res.status(500).json({ error: error.message });
   } else if (error.name === "InvalidExpenseIDInternalError") {
     return res.status(500).json({ error: "Internal Server Error" });
+  } else if (
+    error.name === "JsonWebTokenError" ||
+    error.name === "AuthenticationError"
+  ) {
+    return res.status(401).json({ error: "Authentication Failed" });
   } else if (error.name === "ValidationError") {
     return res.status(400).json({ error: error.message });
   }
-
+  // TODO
+  // Why are we passing error to next after an error
+  // Request should be terminated here if server throws an error
   return next(error);
 };
 
@@ -64,4 +114,5 @@ export default {
   requestLogger,
   unknownEndpoint,
   errorHandler,
+  userIdExtractor,
 };
